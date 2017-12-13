@@ -1,0 +1,22 @@
+{
+    "inputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "InputBook"
+        }
+    },
+    "outputMessageMetadata": {
+        "messagePayload": {
+            "connectorName": "#_custom_mule_metadata_type_#",
+            "typeId": "book"
+        },
+        "sessionVariables": {
+            "ListaLibros": {
+                "connectorName": "#_custom_mule_metadata_type_#",
+                "typeId": "listBook"
+            }
+        }
+    },
+    "id": "ba7d4c61-c877-4acb-8941-d345a2287e16",
+    "version": "5.2.0.0"
+}
