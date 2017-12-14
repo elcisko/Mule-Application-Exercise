@@ -72,13 +72,13 @@ payload map ((payload01 , indexOfPayload01) -> {
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books/{NAME}" allowedMethods="GET" doc:name="HTTP"/>
         <set-variable variableName="findName" value="#[message.inboundProperties.'http.uri.params'.NAME]" doc:name="Variable"/>
         <set-variable variableName="find" value="Book with title: #[flowVars.findName] not found" doc:name="Variable"/>
-        <foreach collection="#[app.registry['books']]" doc:name="For Each">
+        <foreach collection="#[app.registry['books'].keySet()]" doc:name="For Each" >
             <choice doc:name="Choice">
-                <when expression="#[app.registry['books'].get(flowVars.counter).getTitle().equals(flowVars.findName)]">
-                    <set-variable variableName="find" value="#[app.registry['books'].get(flowVars.counter)]" doc:name="Variable"/>
+                <when expression="#[app.registry['books'].get(payload).getTitle().equals(flowVars.findName)]">
+                    <set-variable variableName="find" value="#[app.registry['books'].get(payload)]" doc:name="Variable"/>
                 </when>
                 <otherwise>
-                    <set-variable doc:name="Variable" value="tmp" variableName="tmp"/>
+                    <set-variable variableName="tmp" value="tmp" doc:name="temp2"/>
                 </otherwise>
             </choice>
         </foreach>
