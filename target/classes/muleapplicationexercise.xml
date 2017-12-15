@@ -15,25 +15,6 @@ http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/jso
     <spring:beans>
         <spring:bean id="Bean" name="books" class="java.util.HashMap"/>
     </spring:beans>
-    <flow name="createBook">
-        <http:listener config-ref="HTTP_Listener_Configuration" path="/books" allowedMethods="PUT" doc:name="HTTP"/>
-        <dw:transform-message doc:name="Transform Message" metadata:id="82030646-7841-4bd1-9305-6c2d69bd20bb">
-            <dw:input-payload mimeType="application/json"/>
-            <dw:set-payload><![CDATA[%dw 1.0
-%output application/java
----
-{
-	author: payload.author,
-	pages: payload.pages as :number,
-	title: payload.title
-} as :object {
-	class : "com.mule.support.Book"
-}]]></dw:set-payload>
-        </dw:transform-message>
-        <expression-component doc:name="Expression"><![CDATA[app.registry['books'].put(payload.getId(),payload);]]></expression-component>
-        <logger message="create new book with ID: #[payload.getId()] by user:  #[message.inboundProperties.'user-agent']" level="INFO" doc:name="Logger"/>
-        <set-payload value="books created with id: #[payload.id]" doc:name="Set Payload"/>
-    </flow>
     <flow name="getAllBooks">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books" allowedMethods="GET" doc:name="HTTP"/>
         <set-payload value="#[app.registry['books']]" doc:name="Set Payload"/>
@@ -51,6 +32,25 @@ payload map ((payload01 , indexOfPayload01) -> {
         </dw:transform-message>
         <logger message="getAllBooks by user:  #[message.inboundProperties.'user-agent']" level="INFO" doc:name="Logger"/>
         <set-payload value="All: #[payload]" doc:name="Set Payload"/>
+    </flow>
+    <flow name="createBook">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/books" allowedMethods="PUT" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message" metadata:id="82030646-7841-4bd1-9305-6c2d69bd20bb">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+{
+	author: payload.author,
+	pages: payload.pages as :number,
+	title: payload.title
+} as :object {
+	class : "com.mule.support.Book"
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <expression-component doc:name="Expression"><![CDATA[app.registry['books'].put(payload.getId(),payload);]]></expression-component>
+        <logger message="created new book with ID: #[payload.getId()] by user:  #[message.inboundProperties.'user-agent']" level="INFO" doc:name="Logger"/>
+        <set-payload value="book created with id: #[payload.id]" doc:name="Set Payload"/>
     </flow>
     <flow name="removeBookById">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books/{ID}" allowedMethods="DELETE" doc:name="HTTP"/>
@@ -72,18 +72,20 @@ payload map ((payload01 , indexOfPayload01) -> {
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books/{NAME}" allowedMethods="GET" doc:name="HTTP"/>
         <set-variable variableName="findName" value="#[message.inboundProperties.'http.uri.params'.NAME]" doc:name="Variable"/>
         <set-variable variableName="find" value="Book with title: #[flowVars.findName] not found" doc:name="Variable"/>
+        <set-variable variableName="status" value="book not found" doc:name="setStatus"/>
         <foreach collection="#[app.registry['books'].keySet()]" doc:name="For Each" >
             <choice doc:name="Choice">
                 <when expression="#[app.registry['books'].get(payload).getTitle().equals(flowVars.findName)]">
                     <set-variable variableName="find" value="#[app.registry['books'].get(payload)]" doc:name="Variable"/>
+                    <set-variable variableName="status" value="successful search" doc:name="setStatus"/>
                 </when>
                 <otherwise>
-                    <set-variable variableName="tmp" value="tmp" doc:name="temp2"/>
+                    <set-variable variableName="tmp" value="tmp" doc:name="temp"/>
                 </otherwise>
             </choice>
         </foreach>
         <set-payload value="#[flowVars.find]" doc:name="Set Payload"/>
-        <logger message="search book: #[flowVars.findName] by user:  #[message.inboundProperties.'user-agent']" level="INFO" doc:name="Logger"/>
+        <logger message="search book: #[flowVars.findName] by user:  #[message.inboundProperties.'user-agent']. status: #[flowVars.status]" level="INFO" doc:name="Logger"/>
         <json:object-to-json-transformer doc:name="Object to JSON">
             <json:serialization-mixin mixinClass="com.mule.support.Book" targetClass="com.mule.support.Book"/>
         </json:object-to-json-transformer>
