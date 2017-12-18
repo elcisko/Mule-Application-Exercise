@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:context="http://www.springframework.org/schema/context" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:wmq="http://www.mulesoft.org/schema/mule/ee/wmq" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:context="http://www.springframework.org/schema/context" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:wmq="http://www.mulesoft.org/schema/mule/ee/wmq" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -10,7 +10,8 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 http://www.mulesoft.org/schema/mule/ee/wmq http://www.mulesoft.org/schema/mule/ee/wmq/current/mule-wmq-ee.xsd
 http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
-http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd">
     <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081"  doc:name="HTTP Listener Configuration"/>
     <spring:beans>
         <spring:bean id="Bean" name="books" class="java.util.HashMap"/>
@@ -32,6 +33,7 @@ payload map ((payload01 , indexOfPayload01) -> {
         </dw:transform-message>
         <logger message="getAllBooks by user:  #[message.inboundProperties.'user-agent']" level="INFO" doc:name="Logger"/>
         <set-payload value="#[payload]" doc:name="Set Payload"/>
+        <exception-strategy ref="globalExceptions" doc:name="Reference Exception Strategy"/>
     </flow>
     <flow name="createBook">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books" allowedMethods="PUT" doc:name="HTTP"/>
@@ -51,6 +53,7 @@ payload map ((payload01 , indexOfPayload01) -> {
         <expression-component doc:name="Expression"><![CDATA[app.registry['books'].put(payload.getId(),payload);]]></expression-component>
         <logger message="created new book with ID: #[payload.getId()] by user:  #[message.inboundProperties.'user-agent']" level="INFO" doc:name="Logger"/>
         <set-payload value="{message: book created with id: #[payload.id]}" doc:name="Set Payload"/>
+        <exception-strategy ref="globalExceptions" doc:name="Reference Exception Strategy"/>
     </flow>
     <flow name="removeBookById">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books/{ID}" allowedMethods="DELETE" doc:name="HTTP"/>
@@ -67,6 +70,7 @@ payload map ((payload01 , indexOfPayload01) -> {
             </otherwise>
         </choice>
         <set-payload value="#[flowVars.delete]" doc:name="Set Payload"/>
+        <exception-strategy ref="globalExceptions" doc:name="Reference Exception Strategy"/>
     </flow>
     <flow name="findByName">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books/{NAME}" allowedMethods="GET" doc:name="HTTP"/>
@@ -89,6 +93,7 @@ payload map ((payload01 , indexOfPayload01) -> {
         <json:object-to-json-transformer doc:name="Object to JSON">
             <json:serialization-mixin mixinClass="com.mule.support.Book" targetClass="com.mule.support.Book"/>
         </json:object-to-json-transformer>
+        <exception-strategy ref="globalExceptions" doc:name="Reference Exception Strategy"/>
     </flow>
     <flow name="updateById">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books" allowedMethods="POST" doc:name="HTTP"/>
@@ -119,5 +124,12 @@ payload map ((payload01 , indexOfPayload01) -> {
             </otherwise>
         </choice>
         <set-payload value="#[flowVars.updateBook]" doc:name="Set Payload"/>
+        <exception-strategy ref="globalExceptions" doc:name="Reference Exception Strategy"/>
     </flow>
+    <choice-exception-strategy name="globalExceptions">
+        <catch-exception-strategy when="#[exception.causeMatches('java.*')]" doc:name="Catch Exception Strategy">
+        	<set-property propertyName="http.status" value="400" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;errors's generic  management }" doc:name="Set Payload"/>
+        </catch-exception-strategy>
+    </choice-exception-strategy>
 </mule>
