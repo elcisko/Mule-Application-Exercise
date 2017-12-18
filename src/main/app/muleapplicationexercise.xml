@@ -31,7 +31,7 @@ payload map ((payload01 , indexOfPayload01) -> {
 })]]></dw:set-payload>
         </dw:transform-message>
         <logger message="getAllBooks by user:  #[message.inboundProperties.'user-agent']" level="INFO" doc:name="Logger"/>
-        <set-payload value="All: #[payload]" doc:name="Set Payload"/>
+        <set-payload value="#[payload]" doc:name="Set Payload"/>
     </flow>
     <flow name="createBook">
         <http:listener config-ref="HTTP_Listener_Configuration" path="/books" allowedMethods="PUT" doc:name="HTTP"/>
